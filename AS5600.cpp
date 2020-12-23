@@ -48,6 +48,7 @@ int AS5600::getGain (void)
     return _getRegister (_AGCAddress);
 }
 
+
 int AS5600::getMagnitude (void)
 {
     return _getRegisters2 (_MAGNITUDEAddressMSB, _MAGNITUDEAddressLSB);
@@ -71,7 +72,7 @@ int AS5600::_getRegister (uint8_t register1)
 }
 
 
-long AS5600::_getRegisters2 (byte registerMSB, byte registerLSB)
+int32_t AS5600::_getRegisters2 (byte registerMSB, byte registerLSB)
 {
     _lsb = 0;
     _msb = 0;
@@ -107,7 +108,42 @@ long AS5600::_getRegisters2 (byte registerMSB, byte registerLSB)
 }
 
 
-void setI2CAddress (uint8_t new_address)
+/** @brief   Set the I2C address of the AS5600.
+ *  @details This method changes the I2C address of the AS5600 and if required,
+ *           makes the change permanent by burning it into the device's ROM.
+ *           @b WARNING: Burning changes permanently to ROM can only be done a
+ *           few times, and any bits set to 1 cannot be cleared to 0. 
+ *  @param   new_address The new I2C address for the AS5600. This address will
+ *           be shifted to go into the address register, so it should not be
+ *           shifted before giving it to this method. 
+ *  @param   burn If @c true, write the address permanently to the chip. This
+ *           can't be done very many times, and bits set to 1 become stuck as 1
+ *           (default @c false)
+ */
+void AS5600::setI2CAddress (uint8_t new_address, bool burn)
 {
+    char to_send[2];                    // Two bytes to be sent:
+    to_send[0] = 0x20;                  // Register address
+    to_send[1] = new_address << 1;      // and new address on I2C bus
 
+    _p_I2C->beginTransmission (_i2c_addr);
+    _p_I2C->write (to_send);
+    _p_I2C->endTransmission ();
+
+    to_send[0] = 0x21;                  // Repeat, to address update register
+
+    _p_I2C->beginTransmission (_i2c_addr);
+    _p_I2C->write (to_send);
+    _p_I2C->endTransmission ();
+
+    // If we're supposed to write permanently, send burn setting command
+    if (burn)
+    {
+        to_send[0] = 0xFF;
+        to_send[1] = 0x40;
+
+        _p_I2C->beginTransmission (_i2c_addr);
+        _p_I2C->write (to_send);
+        _p_I2C->endTransmission ();
+    }
 }

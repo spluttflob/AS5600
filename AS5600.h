@@ -23,13 +23,13 @@ class AS5600
 {
 public:
     AS5600 (TwoWire* p_i2c_bus, uint8_t i2c_address);
-    long getPosition (void);
+    int32_t getPosition (void);
     int getAngle (void);
     int getStatus (void);
     int getGain (void);
     int getMagnitude (void);
     void setZero (void);
-    void setI2CAddress (uint8_t new_address);
+    void setI2CAddress (uint8_t new_address, bool burn = false);
 
 protected: 
     const uint8_t _ZMCOAddress = 0x00;
@@ -56,12 +56,12 @@ protected:
     long _msbMask = 0b00001111;
 
     /// A pointer to the I2C driver which will be used for communication
-    TwoWire* _pI2C;
+    TwoWire* _p_I2C;
 
     /// The I2C address of this particular sensor
     uint8_t _i2c_addr;
 
-    long _getRegisters2 (uint8_t registerMSB, uint8_t registerLSB);
+    int32_t _getRegisters2 (uint8_t registerMSB, uint8_t registerLSB);
     int _getRegister (uint8_t register1);
 };
 
